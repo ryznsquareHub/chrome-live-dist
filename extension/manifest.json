@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "chrome-live 작업 기록",
+  "version": "2.1.0",
+  "description": "chrome-live(Claude)가 크롬에서 한 일을 오른쪽 사이드 패널에 시간순으로 보여 주고, 연결 끊기/다시 연결 버튼을 제공합니다.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlVCDKU+2a1SLToFtZF0ziLi9hFQRA8saa30ptGVL+tdSxmAxj9ScLTQpMona1W3a5Q4/uChxEzRgwCZwhIEEQxIX+ze3WfHaVKb+HnQO0bxZ4z78eG2pLEhB6aVB60kszqUrgf7qkV9FQQ44bZJMp3vQIpVfCj73ywvSoxv4GIfCGJBRsYfv8CTTrL4mCFSSoHwicW2asnOSFOwyWgc6tLnXCtPdMUoQ9DFIaFlOhkd3bYzN3BUBX9vmdoLz2V9WKn+1AQTGLRkVt6J7YkgJvyw4YHUxmm5J5FRQFsAi6PWn+zS8J8MRsODWsqUQpsh3W45qu5OYqbKCmLSFn+n6jwIDAQAB",
+  "permissions": [
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:18932/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "action": {
+    "default_title": "chrome-live 작업 기록 열기"
+  }
+}

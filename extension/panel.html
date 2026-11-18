@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>chrome-live</title>
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+<header class="bar">
+  <span id="dot" class="dot"></span>
+  <span id="stText" class="st">확인 중</span>
+  <span id="stAgo" class="meta-t"></span>
+  <button id="infoBtn" class="icon info" aria-label="설명" aria-expanded="false">i</button>
+  <span class="spacer"></span>
+  <button id="toggle" class="btn">연결 끊기</button>
+</header>
+<div id="pop" class="pop" hidden></div>
+<div id="updBar" class="updbar" role="status" hidden><span class="updt">새 버전 <b id="updBarV"></b></span><span class="spacer"></span><button id="updBarGo" class="btn primary small" type="button">업데이트</button><button id="updBarX" class="icon" type="button" title="이 버전은 그만 알리기" aria-label="닫기">×</button></div>
+
+<nav class="seg" role="tablist">
+  <button data-v="chat" class="on" role="tab">채팅</button>
+  <button data-v="vault" role="tab">내 정보</button>
+  <button data-v="log" role="tab">기록</button>
+  <button data-v="set" role="tab">설정</button>
+</nav>
+<div id="confirms" aria-live="assertive"></div>
+
+<section id="vChat" class="view">
+  <div class="chathead">
+    <button id="cPick" class="picker" aria-haspopup="listbox" aria-expanded="false"><span id="cPickT" class="pt">탭 고르기…</span><span class="caret">▾</span></button>
+    <button id="cFollow" class="icon follow" aria-pressed="true" title="보는 탭 따라가기" aria-label="보는 탭 따라가기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg></button>
+    <button id="cLog" class="icon" title="이 탭의 작업 기록" aria-label="이 탭의 작업 기록">≡</button>
+    <button id="cReset" class="icon" title="이 탭 대화 지우기" aria-label="대화 지우기">⟲</button>
+  </div>
+  <div id="cMenu" class="pickmenu" role="listbox" hidden></div>
+  <div id="msgs"></div>
+  <div id="cModelMenu" class="mdlmenu" role="menu" hidden></div>
+  <form id="cForm" autocomplete="off">
+    <textarea id="cText" rows="2" placeholder="이 탭에서 할 일을 말해 주세요 (Enter 보내기)"></textarea>
+    <div class="cbtns">
+      <div id="cEng" class="eng" role="radiogroup" aria-label="채팅 엔진"><button type="button" data-e="claude" role="radio" aria-checked="true">Claude</button><button type="button" data-e="codex" role="radio" aria-checked="false">Codex</button></div>
+      <button type="button" id="cModel" class="mdl" aria-haspopup="menu" aria-expanded="false" title="모델 · 추론 강도"><span id="cModelT">기본</span><span class="caret">▾</span></button>
+      <span id="cHint" class="meta-t"></span>
+      <button type="button" id="cStop" class="btn small danger" hidden>중지</button>
+      <button type="submit" id="cSend" class="btn small primary">보내기</button>
+    </div>
+  </form>
+</section>
+
+<section id="vVault" class="view" hidden>
+  <div class="vtop">
+    <input id="vSearch" type="search" placeholder="검색" aria-label="내 정보 검색" autocomplete="off">
+    <button id="vBulkBtn" class="btn small ghost" title="표처럼 정리된 정보를 붙여넣어 한 번에 추가">한꺼번에</button>
+    <button id="vMore" class="icon" aria-label="더보기" aria-expanded="false">⋯</button>
+  </div>
+  <div id="vMenu" class="menu" hidden>
+    <button id="vExport">내보내기 (JSON 파일)</button>
+    <button id="vImport">가져오기 (JSON 파일)</button>
+    <input type="file" id="vFile" accept="application/json,.json" hidden>
+  </div>
+  <form id="vBulk" class="card" hidden autocomplete="off">
+    <div class="ct2">한꺼번에 추가</div>
+    <label>분류<select id="bCat"></select></label>
+    <label>붙여넣기 <span class="meta-t">첫 줄 제목 · 한 줄에 "항목[탭]정보"</span>
+      <textarea id="bText" rows="6" spellcheck="false" placeholder="기본 개인정보&#10;항목	정보&#10;이름	홍길동&#10;전화번호	010-0000-0000"></textarea></label>
+    <div id="bInfo" class="meta-t"></div>
+    <div id="bRows"></div>
+    <label class="chk"><input type="checkbox" id="bNote" checked> 메모로도 저장</label>
+    <label id="bNoteTitleL">메모 제목<input id="bNoteTitle" maxlength="60" placeholder="첫 줄 제목"></label>
+    <div class="ferr" id="bErr" hidden></div>
+    <div class="fbtns"><button type="button" id="bCancel" class="btn small">취소</button><button type="submit" id="bSave" class="btn small primary" disabled>저장</button></div>
+  </form>
+  <div id="vList"></div>
+  <p class="vfoot">Claude는 값을 보지 않아요 · 이 PC에만 암호화 저장</p>
+</section>
+
+<section id="vLog" class="view" hidden>
+  <div class="filters">
+    <select id="fTab" aria-label="탭"><option value="">모든 탭</option></select>
+    <select id="fProfile" aria-label="프로필"><option value="">모든 프로필</option></select>
+    <button id="fErr" class="chip" aria-pressed="false">오류만</button>
+  </div>
+  <div id="list"></div>
+  <p id="empty" class="empty">아직 기록이 없어요</p>
+</section>
+
+<section id="vSet" class="view" hidden>
+  <div id="sBody" class="sbody">
+    <div id="sErr" class="snotice" hidden></div>
+    <section class="ssec">
+      <h3 class="vh"><span>탭 연결 방식</span><span id="sv-attachMode" class="ssaved">✓ 저장됨</span></h3>
+      <div class="sgroup">
+        <label class="sopt"><input type="radio" name="attachMode" value="on-demand"><span><b>작업하는 탭에만 붙기</b> <span class="meta-t">기본 · 권장</span><br><span class="sd">Claude가 실제로 작업하는 탭에만 연결해요. 다른 탭은 건드리지 않아요.</span></span></label>
+        <label class="sopt"><input type="radio" name="attachMode" value="all"><span><b>모든 탭에 붙기</b><br><span class="sd">연결할 때 열린 탭 전체에 붙어요. 탭 목록이 빠르지만 잠든 탭이 깨어날 수 있어요.</span></span></label>
+      </div>
+    </section>
+    <section class="ssec">
+      <h3 class="vh"><span>자동 끊기</span><span id="sv-disconnectAfterIdleSec" class="ssaved">✓ 저장됨</span></h3>
+      <div class="sgroup">
+        <div class="srow">
+          <label class="switch"><input type="checkbox" id="sAuto"><span class="track"></span><span class="swl2">작업이 없으면 연결 끊기</span></label>
+          <span class="spacer"></span>
+          <input id="sAutoMin" class="snum" type="number" min="1" max="600" step="1" aria-label="분"><span class="meta-t">분</span>
+        </div>
+        <div class="sd pad">끊기면 크롬 위 노란 줄이 사라져요. 다음 작업 때 허용 창이 한 번 떠요.</div>
+      </div>
+    </section>
+    <details class="ssec sadv">
+      <summary class="vh"><span>고급</span></summary>
+      <div class="sgroup">
+        <div class="srow"><span class="sl">연결 유지 시간<br><span class="sd">작업 없이 이만큼 지나면 연결 정리 (0 = 계속)</span></span><span class="spacer"></span>
+          <input id="sIdleMin" class="snum" type="number" min="0" max="1440" step="1" aria-label="연결 유지 시간(분)"><span class="meta-t">분</span><span id="sv-idleMinutes" class="ssaved">✓</span></div>
+        <div class="srow"><span class="sl">탭 연결 유지<br><span class="sd">작업이 끝난 탭에서 이만큼 지나면 그 탭만 떼기</span></span><span class="spacer"></span>
+          <input id="sTabIdle" class="snum" type="number" min="5" max="3600" step="1" aria-label="탭 연결 유지(초)"><span class="meta-t">초</span><span id="sv-tabIdleDetachSec" class="ssaved">✓</span></div>
+      </div>
+    </details>
+    <section class="ssec" id="sEngSec" hidden>
+      <h3 class="vh"><span>채팅 엔진</span><span id="sv-chatEngine" class="ssaved">✓ 저장됨</span></h3>
+      <div class="sgroup">
+        <label class="sopt"><input type="radio" name="chatEngine" value="claude"><span><b>Claude</b> <span class="meta-t">기본</span><br><span class="sd">Claude Code(claude -p)가 답해요.</span></span></label>
+        <label class="sopt" id="sEngCodex"><input type="radio" name="chatEngine" value="codex"><span><b>Codex</b><br><span class="sd">OpenAI Codex CLI(codex exec)가 답해요. 비용은 토큰으로 표시돼요.</span></span></label>
+      </div>
+      <div id="sEngHint" class="sd smcperr" hidden></div>
+      <div class="sd smcphint">새 대화의 기본값이에요. 대화마다 입력칸 옆에서 바꿀 수 있어요.</div>
+    </section>
+    <section class="ssec" id="sModelSec" hidden>
+      <h3 class="vh"><span>채팅 모델</span><span id="sv-models" class="ssaved">✓ 저장됨</span></h3>
+      <div class="sgroup">
+        <div class="srow"><span class="sl">Claude 모델</span><span class="spacer"></span><select id="sChatModel" class="ssel" aria-label="Claude 모델"></select></div>
+        <div class="srow"><span class="sl">Claude 추론 강도</span><span class="spacer"></span><select id="sChatEffort" class="ssel" aria-label="Claude 추론 강도"></select></div>
+        <div class="srow" id="sCodexModelRow"><span class="sl">Codex 모델</span><span class="spacer"></span><select id="sCodexModel" class="ssel" aria-label="Codex 모델"></select></div>
+        <div class="srow" id="sCodexEffortRow"><span class="sl">Codex 추론 강도</span><span class="spacer"></span><select id="sCodexEffort" class="ssel" aria-label="Codex 추론 강도"></select></div>
+      </div>
+      <div class="sd smcphint">다음 질문부터 적용돼요. 채팅 입력칸 옆 ▾에서도 바꿀 수 있어요. 기본 = 평소 Claude Code / Codex 설정 그대로.</div>
+    </section>
+    <section class="ssec" id="sMcpSec" hidden>
+      <h3 class="vh"><span>채팅에서 쓸 도구(MCP)</span><span id="sv-chatMcpServers" class="ssaved">✓ 저장됨</span></h3>
+      <div id="sMcpList" class="sgroup"></div>
+      <div id="sMcpErr" class="sd smcperr" hidden></div>
+      <div class="sd smcphint">켜는 서버가 많을수록 채팅 시작이 느려져요. 다음 질문부터 적용돼요.<br>플러그인·claude.ai 커넥터는 채팅에서 사용 안 함<br>Claude 채팅에만 적용 (Codex는 자기 설정 그대로)</div>
+    </section>
+    <section class="ssec" id="sRecipeSec" hidden>
+      <h3 class="vh"><span>레시피</span><span id="sv-recipe" class="ssaved">✓ 저장됨</span></h3>
+      <div class="sgroup">
+        <div class="srow"><label class="switch"><input type="checkbox" id="sRecipeAuto"><span class="track"></span><span class="swl2">작업 후 레시피 자동 정리</span></label></div>
+        <div class="sd pad">오래 걸린 작업이 끝나면 뒤에서 그 사이트용 레시피를 만들어 두고, 다음에 같은 일을 더 빨리 해요. 작업 중에는 아무것도 하지 않아요.</div>
+        <div class="srow"><span class="sl">이만큼 걸린 작업부터</span><span class="spacer"></span><input id="sRecipeSec2" class="snum" type="number" min="10" max="600" step="1" aria-label="작업 시간(초)"><span class="meta-t">초</span></div>
+        <div class="srow"><span class="sl">또는 도구를 이만큼 쓴 작업</span><span class="spacer"></span><input id="sRecipeTools" class="snum" type="number" min="2" max="30" step="1" aria-label="도구 호출 수"><span class="meta-t">번</span></div>
+        <div class="srow"><span class="sl">하루 최대</span><span class="spacer"></span><input id="sRecipeDaily" class="snum" type="number" min="0" max="50" step="1" aria-label="하루 최대 횟수"><span class="meta-t">번</span></div>
+        <div class="srow"><span class="sl">정리하는 모델</span><span class="spacer"></span><select id="sRecipeModel" class="ssel" aria-label="레시피 정리 모델"><option value="sonnet">Claude Sonnet (low)</option><option value="haiku">Claude Haiku (low)</option><option value="codex">Codex (low)</option></select></div>
+        <div class="srow"><span class="sl">작업 기록 원본 보관</span><span class="spacer"></span><input id="sTraceDays" class="snum" type="number" min="1" max="60" step="1" aria-label="작업 기록 보관 일수"><span class="meta-t">일</span></div>
+      </div>
+      <div class="sd smcphint">정리하는 모델은 브라우저·파일·도구 없이 기록만 읽어요. 내 정보 값은 레시피에 들어가지 않아요. 요약 기록은 180일 보관, 레시피는 기간이 지나도 지우지 않아요.</div>
+    </section>
+    <section class="ssec" id="sInfoSec" hidden>
+      <h3 class="vh"><span>채팅</span><span id="sv-chatFollowActiveTab" class="ssaved">✓ 저장됨</span></h3>
+      <div class="sgroup">
+        <div class="srow" id="sFollowRow" hidden><label class="switch"><input type="checkbox" id="sFollow"><span class="track"></span><span class="swl2">보는 탭 따라가기</span></label></div>
+        <div class="sd pad" id="sFollowHint" hidden>크롬에서 탭을 바꾸면 채팅도 그 탭의 대화로 바뀌어요. ▾로 고른 탭은 다음에 탭을 바꿀 때까지 유지돼요.</div>
+        <div class="srow" id="sCwdRow"><span class="sl">작업 폴더</span><span class="spacer"></span><span id="sCwd" class="meta-t mono"></span></div>
+      </div>
+    </section>
+    <section class="ssec" id="sUpdSec" hidden>
+      <h3 class="vh"><span>업데이트</span></h3>
+      <div class="sgroup">
+        <div class="srow"><span class="sl" id="sUpdCur"></span><span class="spacer"></span><span id="sUpdState" class="meta-t"></span><button id="sUpdCheck" class="btn small" type="button">확인</button></div>
+        <div id="sUpdNew" class="supdnew" hidden>
+          <div class="supdh"><b id="sUpdNewV"></b><span id="sUpdDate" class="meta-t"></span></div>
+          <ul id="sUpdNotes" class="supdnotes"></ul>
+          <div class="srow"><span class="sd">누르면 Claude CLI에 붙여 넣을 메시지가 복사돼요</span><span class="spacer"></span><button id="sUpdGo" class="btn primary small" type="button">업데이트</button></div>
+        </div>
+        <div id="sUpdExt" class="sd pad sverw" hidden></div>
+      </div>
+    </section>
+  </div>
+  <p id="sVer" class="sver" hidden><span id="sVerT"></span><span id="sVerWarn" class="sverw" hidden>코드가 바뀜 — 데몬 재시작 필요</span></p>
+</section>
+
+<div id="toast" role="status" hidden><span id="toastMsg"></span><button id="toastAct" type="button" hidden></button></div>
+<script src="panel.js"></script>
+</body>
+</html>

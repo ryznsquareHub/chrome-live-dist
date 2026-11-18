@@ -1,0 +1,49 @@
+# dependencies
+node_modules/
+
+# runtime state / logs (written by the daemon)
+server.log
+server.log.*
+events.jsonl
+events.jsonl.*
+chat/threads/
+chat/work/
+config.json
+
+# secrets: panel token is written by the daemon at startup (server.js) into extension/
+extension/panel-token.json
+*.local.js
+*.local.json
+
+# daemon state that normally lives in %LOCALAPPDATA%chrome-live (never copy it into the repo)
+auth.json
+curl-headers.txt
+vault.dat
+vault.dat.*
+profile-memory.json
+chat-mcp.json
+paused.json
+recipe-writer.jsonl
+
+# old backups and scratch files
+_archive/
+*.bak
+*.bak[0-9]*
+*.v2-inproc.js.bak
+
+# test outputs
+test/_*
+test/hygiene-result.json
+bench/paneltest/_*/
+.playwright-mcp/
+
+# OS / editor junk
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# design capture temp copy (created/deleted by design/capture/capture.js)
+design/capture/.run/
